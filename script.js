@@ -6,8 +6,8 @@ let currentEditingId = null;
 
 // Google Sheets Configuration
 const GOOGLE_SHEETS_CONFIG = {
-    apiKey: 'YOUR_GOOGLE_SHEETS_API_KEY',
-    spreadsheetId: 'YOUR_SPREADSHEET_ID',
+    apiKey: 'AIzaSyBFkqC_FD52gbJryLnazM9rUZDh68yeddk',
+    spreadsheetId: 'https://docs.google.com/spreadsheets/d/15nu60sG09vyZgCPGie8PosMszyNPTeVKMRIkr_4ooOM',
     range: 'A:Z'
 };
 
