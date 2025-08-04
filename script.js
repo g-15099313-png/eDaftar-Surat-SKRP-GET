@@ -1,28 +1,15 @@
 // Application State
-let currentRole = 'guru-besar'; // 'guru-besar', 'gpkp', 'gpkhem', 'gpkko', 'pembantu-tadbir', 'pembantu-operasi'
+let currentRole = 'guru-besar';
 let suratMasuk = [];
 let suratKeluar = [];
 let currentEditingId = null;
-let uploadedFiles = [];
-let googleSheetsApiKey = null;
-let googleSheetsId = null;
 
 // Google Sheets Configuration
 const GOOGLE_SHEETS_CONFIG = {
-    apiKey: 'AIzaSyBFkqC_FD52gbJryLnazM9rUZDh68yeddk', // Replace with your API key
-    spreadsheetId: '15nu60sG09vyZgCPGie8PosMszyNPTeVKMRIkr_4ooOM', // Replace with your spreadsheet ID
+    apiKey: 'YOUR_GOOGLE_SHEETS_API_KEY',
+    spreadsheetId: 'YOUR_SPREADSHEET_ID',
     range: 'A:Z'
 };
-
-// DOM Elements
-const currentUserElement = document.getElementById('currentUser');
-const switchRoleBtn = document.getElementById('switchRole');
-const navButtons = document.querySelectorAll('.nav-btn');
-const tabContents = document.querySelectorAll('.tab-content');
-const modal = document.getElementById('modal');
-const modalTitle = document.getElementById('modalTitle');
-const notification = document.getElementById('notification');
-const notificationMessage = document.getElementById('notificationMessage');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -36,10 +23,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // Setup Event Listeners
 function setupEventListeners() {
     // Role switching
-    switchRoleBtn.addEventListener('click', switchRole);
+    document.getElementById('switchRole').addEventListener('click', switchRole);
     
     // Navigation
-    navButtons.forEach(btn => {
+    document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
     
@@ -56,19 +43,6 @@ function setupEventListeners() {
     document.getElementById('btnCancel').addEventListener('click', closeModal);
     document.getElementById('btnDelete').addEventListener('click', handleDeleteSurat);
     
-    // Notification close
-    document.querySelector('.notification-close').addEventListener('click', hideNotification);
-    
-    // Close modal when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            closeModal();
-        }
-    });
-
-    // Upload functionality
-    setupUploadListeners();
-    
     // Google Sheets buttons
     document.getElementById('syncToSheets').addEventListener('click', syncToGoogleSheets);
     document.getElementById('loadFromSheets').addEventListener('click', loadFromGoogleSheets);
@@ -78,152 +52,8 @@ function setupEventListeners() {
     const autoSyncToggle = document.getElementById('autoSyncToggle');
     if (autoSyncToggle) {
         autoSyncToggle.addEventListener('change', toggleAutoSync);
-        // Set initial state
         autoSyncToggle.checked = localStorage.getItem('autoSyncToSheets') === 'true';
     }
-}
-
-// Upload Setup
-function setupUploadListeners() {
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
-
-    // Drag and drop events
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        handleFileUpload(files);
-    });
-
-    // File input change
-    fileInput.addEventListener('change', (e) => {
-        handleFileUpload(e.target.files);
-    });
-
-    // Click to upload
-    uploadArea.addEventListener('click', () => {
-        fileInput.click();
-    });
-}
-
-// File Upload Handler
-function handleFileUpload(files) {
-    Array.from(files).forEach(file => {
-        if (validateFile(file)) {
-            const fileData = {
-                id: generateFileId(),
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                uploadDate: new Date().toISOString(),
-                file: file
-            };
-            
-            uploadedFiles.push(fileData);
-            renderUploadedFiles();
-            showNotification(`Fail ${file.name} berjaya dimuat naik`, 'success');
-        }
-    });
-}
-
-// File Validation
-function validateFile(file) {
-    const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'image/jpeg',
-        'image/jpg',
-        'image/png'
-    ];
-    
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    
-    if (!allowedTypes.includes(file.type)) {
-        showNotification(`Jenis fail ${file.name} tidak diterima`, 'error');
-        return false;
-    }
-    
-    if (file.size > maxSize) {
-        showNotification(`Saiz fail ${file.name} terlalu besar (maksimum 10MB)`, 'error');
-        return false;
-    }
-    
-    return true;
-}
-
-// Render Uploaded Files
-function renderUploadedFiles() {
-    const container = document.getElementById('uploadedFilesList');
-    container.innerHTML = '';
-    
-    uploadedFiles.forEach(file => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        
-        const fileIcon = getFileIcon(file.type);
-        
-        fileItem.innerHTML = `
-            <div class="file-info">
-                <div class="file-icon">
-                    <i class="${fileIcon}"></i>
-                </div>
-                <div class="file-details">
-                    <h4>${file.name}</h4>
-                    <p>${formatFileSize(file.size)} • ${formatDate(file.uploadDate)}</p>
-                </div>
-            </div>
-            <div class="file-actions">
-                <button class="btn btn-danger" onclick="removeFile('${file.id}')">
-                    <i class="fas fa-trash"></i> Padam
-                </button>
-            </div>
-        `;
-        
-        container.appendChild(fileItem);
-    });
-}
-
-// Get File Icon
-function getFileIcon(type) {
-    if (type.includes('pdf')) return 'fas fa-file-pdf';
-    if (type.includes('word') || type.includes('document')) return 'fas fa-file-word';
-    if (type.includes('image')) return 'fas fa-file-image';
-    return 'fas fa-file';
-}
-
-// Format File Size
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-// Remove File
-function removeFile(fileId) {
-    const index = uploadedFiles.findIndex(f => f.id === fileId);
-    if (index !== -1) {
-        uploadedFiles.splice(index, 1);
-        renderUploadedFiles();
-        showNotification('Fail berjaya dipadam', 'success');
-    }
-}
-
-// Generate File ID
-function generateFileId() {
-    return 'FILE_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
 // Role Management
@@ -250,124 +80,65 @@ function getRoleText(role) {
 }
 
 function updateUserInterface() {
-    const roleText = getRoleText(currentRole);
-    currentUserElement.textContent = roleText;
-    
-    // Update permissions based on role
-    const addButton = document.querySelector('[data-tab="tambah-surat"]');
-    const uploadButton = document.querySelector('[data-tab="muat-naik"]');
-    
-    // Only Pembantu Operasi and Pembantu Tadbir can add letters
-    if (currentRole === 'guru-besar' || currentRole === 'gpkp' || currentRole === 'gpkhem' || currentRole === 'gpkko') {
-        addButton.style.opacity = '0.5';
-        addButton.style.pointerEvents = 'none';
-    } else {
-        addButton.style.opacity = '1';
-        addButton.style.pointerEvents = 'auto';
-    }
-    
-    // All roles can upload files
-    uploadButton.style.opacity = '1';
-    uploadButton.style.pointerEvents = 'auto';
+    document.getElementById('currentUser').textContent = getRoleText(currentRole);
 }
 
 // Tab Management
 function switchTab(tabId) {
-    // Update navigation buttons
-    navButtons.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.tab === tabId) {
-            btn.classList.add('active');
-        }
-    });
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     
-    // Update tab content
-    tabContents.forEach(content => {
-        content.classList.remove('active');
-        if (content.id === tabId) {
-            content.classList.add('active');
-        }
-    });
+    document.getElementById(tabId).classList.add('active');
+    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
 }
 
 // Data Management
 function loadData() {
-    // Load from localStorage or use sample data
-    const storedMasuk = localStorage.getItem('suratMasuk');
-    const storedKeluar = localStorage.getItem('suratKeluar');
-    const storedFiles = localStorage.getItem('uploadedFiles');
+    const savedSuratMasuk = localStorage.getItem('suratMasuk');
+    const savedSuratKeluar = localStorage.getItem('suratKeluar');
     
-    if (storedMasuk) {
-        suratMasuk = JSON.parse(storedMasuk);
-    } else {
-        // Sample data for Surat Masuk
-        suratMasuk = [
-            {
-                id: 'SM001',
-                noRujukan: 'SKRP/2024/001',
-                tarikh: '2024-01-15',
-                pengirim: 'Jabatan Pendidikan Negeri',
-                subjek: 'Permohonan Maklumat Program Akademik',
-                keterangan: 'Surat rasmi untuk mendapatkan maklumat program akademik terkini',
-                status: 'baru',
-                tindakanSiapa: 'guru-besar'
-            },
-            {
-                id: 'SM002',
-                noRujukan: 'SKRP/2024/002',
-                tarikh: '2024-01-20',
-                pengirim: 'Universiti Malaya',
-                subjek: 'Jemputan Kolaborasi Penyelidikan',
-                keterangan: 'Jemputan untuk kerjasama dalam projek penyelidikan bersama',
-                status: 'dalam_proses',
-                tindakanSiapa: 'gpkp'
-            }
-        ];
-    }
+    if (savedSuratMasuk) suratMasuk = JSON.parse(savedSuratMasuk);
+    if (savedSuratKeluar) suratKeluar = JSON.parse(savedSuratKeluar);
     
-    if (storedKeluar) {
-        suratKeluar = JSON.parse(storedKeluar);
-    } else {
-        // Sample data for Surat Keluar
-        suratKeluar = [
-            {
-                id: 'SK001',
-                noRujukan: 'SKRP/OUT/2024/001',
-                tarikh: '2024-01-10',
-                penerima: 'Kementerian Pendidikan Malaysia',
-                subjek: 'Laporan Prestasi Akademik 2023',
-                keterangan: 'Laporan tahunan prestasi akademik sekolah',
-                status: 'selesai',
-                tindakanSiapa: 'pembantu-operasi'
-            },
-            {
-                id: 'SK002',
-                noRujukan: 'SKRP/OUT/2024/002',
-                tarikh: '2024-01-25',
-                penerima: 'PIBG SKRP',
-                subjek: 'Jemputan Mesyuarat Agung Tahunan',
-                keterangan: 'Jemputan untuk mesyuarat agung tahunan PIBG',
-                status: 'baru',
-                tindakanSiapa: 'pembantu-tadbir'
-            }
-        ];
+    if (suratMasuk.length === 0 && suratKeluar.length === 0) {
+        loadSampleData();
     }
+}
+
+function loadSampleData() {
+    suratMasuk = [
+        {
+            id: 'SM001',
+            noRujukan: 'SM/2024/001',
+            tarikh: '2024-01-15',
+            pengirim: 'Jabatan Pendidikan Negeri',
+            subjek: 'Pelan Pembangunan Sekolah 2024',
+            status: 'baru',
+            tindakanSiapa: 'guru-besar'
+        }
+    ];
     
-    if (storedFiles) {
-        uploadedFiles = JSON.parse(storedFiles);
-    }
+    suratKeluar = [
+        {
+            id: 'SK001',
+            noRujukan: 'SK/2024/001',
+            tarikh: '2024-01-10',
+            penerima: 'Jabatan Pendidikan Negeri',
+            subjek: 'Laporan Aktiviti Sekolah Bulan Januari',
+            status: 'selesai',
+            tindakanSiapa: 'pembantu-tadbir'
+        }
+    ];
+    
+    saveData();
 }
 
 function saveData() {
     localStorage.setItem('suratMasuk', JSON.stringify(suratMasuk));
     localStorage.setItem('suratKeluar', JSON.stringify(suratKeluar));
-    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
     
-    // Auto-sync to Google Sheets if enabled
     if (localStorage.getItem('autoSyncToSheets') === 'true') {
-        setTimeout(() => {
-            syncToGoogleSheets();
-        }, 1000);
+        setTimeout(() => syncToGoogleSheets(), 1000);
     }
 }
 
@@ -412,7 +183,6 @@ function renderSuratMasuk() {
         `;
         tbody.appendChild(row);
         
-        // Add event listener for file upload
         const fileInput = document.getElementById(`upload-${surat.id}`);
         fileInput.addEventListener('change', (e) => {
             handleSuratFileUpload(e, surat.id, 'masuk');
@@ -455,7 +225,6 @@ function renderSuratKeluar() {
         `;
         tbody.appendChild(row);
         
-        // Add event listener for file upload
         const fileInput = document.getElementById(`upload-${surat.id}`);
         fileInput.addEventListener('change', (e) => {
             handleSuratFileUpload(e, surat.id, 'keluar');
@@ -495,7 +264,6 @@ function handleAddSurat(e) {
         return;
     }
     
-    const formData = new FormData(e.target);
     const jenisSurat = document.getElementById('jenisSurat').value;
     
     if (!jenisSurat) {
@@ -539,12 +307,18 @@ function handleEditSurat(e) {
         tindakanSiapa: document.getElementById('editTindakanSiapa').value
     };
     
-    // Find and update the surat
-    let suratList = currentEditingId.startsWith('SM') ? suratMasuk : suratKeluar;
-    const suratIndex = suratList.findIndex(s => s.id === currentEditingId);
+    const suratList = currentEditingId.jenis === 'masuk' ? suratMasuk : suratKeluar;
+    const suratIndex = suratList.findIndex(s => s.id === currentEditingId.id);
     
     if (suratIndex !== -1) {
-        suratList[suratIndex] = { ...suratList[suratIndex], ...suratData };
+        Object.assign(suratList[suratIndex], suratData);
+        
+        if (currentEditingId.jenis === 'masuk') {
+            suratList[suratIndex].pengirim = document.getElementById('editPengirimPenerima').value;
+        } else {
+            suratList[suratIndex].penerima = document.getElementById('editPengirimPenerima').value;
+        }
+        
         saveData();
         renderTables();
         closeModal();
@@ -554,8 +328,8 @@ function handleEditSurat(e) {
 
 function handleDeleteSurat() {
     if (confirm('Adakah anda pasti mahu memadamkan surat ini?')) {
-        let suratList = currentEditingId.startsWith('SM') ? suratMasuk : suratKeluar;
-        const suratIndex = suratList.findIndex(s => s.id === currentEditingId);
+        const suratList = currentEditingId.jenis === 'masuk' ? suratMasuk : suratKeluar;
+        const suratIndex = suratList.findIndex(s => s.id === currentEditingId.id);
         
         if (suratIndex !== -1) {
             suratList.splice(suratIndex, 1);
@@ -569,11 +343,12 @@ function handleDeleteSurat() {
 
 // Edit and Delete Functions
 function editSurat(jenis, id) {
-    currentEditingId = id;
     const suratList = jenis === 'masuk' ? suratMasuk : suratKeluar;
     const surat = suratList.find(s => s.id === id);
     
     if (surat) {
+        currentEditingId = { jenis, id };
+        
         document.getElementById('editNoRujukan').value = surat.noRujukan;
         document.getElementById('editTarikh').value = surat.tarikh;
         document.getElementById('editSubjek').value = surat.subjek;
@@ -587,8 +362,8 @@ function editSurat(jenis, id) {
             document.getElementById('editPengirimPenerima').value = surat.penerima;
         }
         
-        modalTitle.textContent = `Edit Surat ${jenis === 'masuk' ? 'Masuk' : 'Keluar'}`;
-        modal.style.display = 'block';
+        document.getElementById('modalTitle').textContent = `Edit Surat ${jenis === 'masuk' ? 'Masuk' : 'Keluar'}`;
+        document.getElementById('modal').style.display = 'block';
     }
 }
 
@@ -608,7 +383,7 @@ function deleteSurat(jenis, id) {
 
 // Modal Management
 function closeModal() {
-    modal.style.display = 'none';
+    document.getElementById('modal').style.display = 'none';
     currentEditingId = null;
     document.getElementById('formEditSurat').reset();
 }
@@ -634,10 +409,8 @@ function syncToGoogleSheets() {
     button.innerHTML = '<span class="loading"></span> Menyegerakan...';
     button.disabled = true;
     
-    // Prepare data for Google Sheets
     const data = prepareDataForSheets();
     
-    // Check if Google Sheets API is available
     if (typeof gapi === 'undefined' || !gapi.client) {
         showNotification('Google Sheets API tidak tersedia. Sila periksa konfigurasi.', 'error');
         button.innerHTML = originalText;
@@ -645,7 +418,6 @@ function syncToGoogleSheets() {
         return;
     }
     
-    // Clear existing data and write new data
     gapi.client.sheets.spreadsheets.values.clear({
         spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
         range: 'A:Z'
@@ -654,9 +426,7 @@ function syncToGoogleSheets() {
             spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
             range: 'A1',
             valueInputOption: 'RAW',
-            resource: {
-                values: data
-            }
+            resource: { values: data }
         });
     }).then((response) => {
         button.innerHTML = originalText;
@@ -677,7 +447,6 @@ function loadFromGoogleSheets() {
         button.innerHTML = '<span class="loading"></span> Memuat dari Google Sheets...';
         button.disabled = true;
         
-        // Check if Google Sheets API is available
         if (typeof gapi === 'undefined' || !gapi.client) {
             showNotification('Google Sheets API tidak tersedia. Sila periksa konfigurasi.', 'error');
             button.innerHTML = originalText;
@@ -685,14 +454,12 @@ function loadFromGoogleSheets() {
             return;
         }
         
-        // Read data from Google Sheets
         gapi.client.sheets.spreadsheets.values.get({
             spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
             range: 'A:Z'
         }).then((response) => {
             const values = response.result.values;
             if (values && values.length > 1) {
-                // Process the data and update local storage
                 processSheetsData(values);
                 button.innerHTML = originalText;
                 button.disabled = false;
@@ -712,10 +479,8 @@ function loadFromGoogleSheets() {
 }
 
 function processSheetsData(values) {
-    // Skip header row
     const dataRows = values.slice(1);
     
-    // Clear existing data
     suratMasuk = [];
     suratKeluar = [];
     
@@ -743,7 +508,6 @@ function processSheetsData(values) {
         }
     });
     
-    // Save to local storage and re-render
     saveData();
     renderTables();
 }
@@ -752,7 +516,6 @@ function prepareDataForSheets() {
     const headers = ['Jenis', 'No. Rujukan', 'Tarikh', 'Pengirim/Penerima', 'Subjek', 'Status', 'Tindakan Siapa', 'Fail Surat', 'Saiz Fail', 'Tarikh Muat Naik'];
     const data = [headers];
     
-    // Add Surat Masuk
     suratMasuk.forEach(surat => {
         data.push([
             'Masuk',
@@ -768,7 +531,6 @@ function prepareDataForSheets() {
         ]);
     });
     
-    // Add Surat Keluar
     suratKeluar.forEach(surat => {
         data.push([
             'Keluar',
@@ -810,29 +572,49 @@ function handleSuratFileUpload(e, suratId, jenis) {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Validate file
     if (!validateFile(file)) {
         return;
     }
     
-    // Find the surat in the appropriate array
     const suratArray = jenis === 'masuk' ? suratMasuk : suratKeluar;
     const surat = suratArray.find(s => s.id === suratId);
     
     if (surat) {
-        // Update the surat with file information
         surat.suratFile = file.name;
         surat.fileSize = formatFileSize(file.size);
         surat.uploadDate = new Date().toISOString();
         
-        // Save data
         saveData();
-        
-        // Re-render tables to show the uploaded file
         renderTables();
         
         showNotification(`Fail "${file.name}" berjaya dimuat naik untuk surat ${surat.noRujukan}`, 'success');
     }
+}
+
+// File validation
+function validateFile(file) {
+    const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/jpg',
+        'image/png'
+    ];
+    
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    if (!allowedTypes.includes(file.type)) {
+        showNotification(`Jenis fail "${file.name}" tidak diterima. Sila pilih fail PDF, DOC, DOCX, JPG, atau PNG.`, 'error');
+        return false;
+    }
+    
+    if (file.size > maxSize) {
+        showNotification(`Saiz fail "${file.name}" terlalu besar. Saiz maksimum ialah 10MB.`, 'error');
+        return false;
+    }
+    
+    return true;
 }
 
 // Utility Functions
@@ -860,6 +642,14 @@ function formatDate(dateString) {
         month: 'long',
         day: 'numeric'
     });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 function getStatusText(status) {
@@ -901,18 +691,20 @@ function setCurrentDate() {
 
 // Notification System
 function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    const notificationMessage = document.getElementById('notificationMessage');
+    
     notificationMessage.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'flex';
     
-    // Auto hide after 5 seconds
     setTimeout(() => {
         hideNotification();
     }, 5000);
 }
 
 function hideNotification() {
-    notification.style.display = 'none';
+    document.getElementById('notification').style.display = 'none';
 }
 
 // Initialize the application
