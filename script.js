@@ -7,7 +7,7 @@ let currentEditingId = null;
 // Google Sheets Configuration
 const GOOGLE_SHEETS_CONFIG = {
     apiKey: 'AIzaSyBFkqC_FD52gbJryLnazM9rUZDh68yeddk',
-    spreadsheetId: 'https://docs.google.com/spreadsheets/d/15nu60sG09vyZgCPGie8PosMszyNPTeVKMRIkr_4ooOM',
+    spreadsheetId: '5nu60sG09vyZgCPGie8PosMszyNPTeVKMRIkr_4ooOM',
     range: 'A:Z'
 };
 
