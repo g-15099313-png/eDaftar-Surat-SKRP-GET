@@ -1,711 +1,410 @@
-// Application State
-let currentRole = 'guru-besar';
-let suratMasuk = [];
-let suratKeluar = [];
-let currentEditingId = null;
+// Konfigurasi Google Sheets diimport dari config.js
 
-// Google Sheets Configuration
-const GOOGLE_SHEETS_CONFIG = {
-    apiKey: 'AIzaSyBFkqC_FD52gbJryLnazM9rUZDh68yeddk',
-    spreadsheetId: '5nu60sG09vyZgCPGie8PosMszyNPTeVKMRIkr_4ooOM',
-    range: 'A:Z'
-};
+// Data aplikasi
+let suratMasukData = [];
+let suratKeluarData = [];
 
-// Initialize the application
+// Inisialisasi aplikasi
 document.addEventListener('DOMContentLoaded', function() {
-    loadData();
-    setupEventListeners();
-    renderTables();
-    setCurrentDate();
-    initializeGoogleSheets();
+    initializeApp();
 });
 
-// Setup Event Listeners
-function setupEventListeners() {
-    // Role switching
-    document.getElementById('switchRole').addEventListener('click', switchRole);
+function initializeApp() {
+    setupNavigation();
+    setupEventListeners();
     
-    // Navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-    
-    // Search functionality
-    document.getElementById('searchMasuk').addEventListener('input', filterSuratMasuk);
-    document.getElementById('searchKeluar').addEventListener('input', filterSuratKeluar);
-    
-    // Form submission
-    document.getElementById('formTambahSurat').addEventListener('submit', handleAddSurat);
-    document.getElementById('formEditSurat').addEventListener('submit', handleEditSurat);
-    
-    // Modal events
-    document.querySelector('.close').addEventListener('click', closeModal);
-    document.getElementById('btnCancel').addEventListener('click', closeModal);
-    document.getElementById('btnDelete').addEventListener('click', handleDeleteSurat);
-    
-    // Google Sheets buttons
-    document.getElementById('syncToSheets').addEventListener('click', syncToGoogleSheets);
-    document.getElementById('loadFromSheets').addEventListener('click', loadFromGoogleSheets);
-    document.getElementById('openSheets').addEventListener('click', openGoogleSheets);
-    
-    // Auto-sync toggle
-    const autoSyncToggle = document.getElementById('autoSyncToggle');
-    if (autoSyncToggle) {
-        autoSyncToggle.addEventListener('change', toggleAutoSync);
-        autoSyncToggle.checked = localStorage.getItem('autoSyncToSheets') === 'true';
+    // Periksa konfigurasi Google Sheets
+    if (typeof validateConfig === 'function' && validateConfig()) {
+        console.log('Google Sheets API dikonfigurasi dengan betul');
+        // loadData(); // Uncomment untuk menggunakan Google Sheets
+    } else {
+        console.log('Menggunakan data sample kerana Google Sheets tidak dikonfigurasi');
     }
-}
-
-// Role Management
-function switchRole() {
-    const roles = ['guru-besar', 'gpkp', 'gpkhem', 'gpkko', 'pembantu-tadbir', 'pembantu-operasi'];
-    const currentIndex = roles.indexOf(currentRole);
-    const nextIndex = (currentIndex + 1) % roles.length;
-    currentRole = roles[nextIndex];
     
-    updateUserInterface();
-    showNotification(`Peranan ditukar kepada: ${getRoleText(currentRole)}`, 'success');
+    loadSampleData();
 }
 
-function getRoleText(role) {
-    const roleMap = {
-        'guru-besar': 'Guru Besar',
-        'gpkp': 'GPKP',
-        'gpkhem': 'GPKHEM',
-        'gpkko': 'GPKKO',
-        'pembantu-tadbir': 'Pembantu Tadbir',
-        'pembantu-operasi': 'Pembantu Operasi'
-    };
-    return roleMap[role] || role;
+function setupNavigation() {
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const pages = document.querySelectorAll('.page');
+
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetPage = button.getAttribute('data-page');
+            
+            navButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            pages.forEach(page => {
+                page.classList.remove('active');
+                if (page.id === targetPage) {
+                    page.classList.add('active');
+                }
+            });
+        });
+    });
 }
 
-function updateUserInterface() {
-    document.getElementById('currentUser').textContent = getRoleText(currentRole);
-}
+function setupEventListeners() {
+    const suratForm = document.getElementById('surat-form');
+    if (suratForm) {
+        suratForm.addEventListener('submit', handleFormSubmit);
+    }
 
-// Tab Management
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-    
-    document.getElementById(tabId).classList.add('active');
-    document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
-}
+    const editForm = document.getElementById('edit-form');
+    if (editForm) {
+        editForm.addEventListener('submit', handleEditSubmit);
+    }
 
-// Data Management
-function loadData() {
-    const savedSuratMasuk = localStorage.getItem('suratMasuk');
-    const savedSuratKeluar = localStorage.getItem('suratKeluar');
-    
-    if (savedSuratMasuk) suratMasuk = JSON.parse(savedSuratMasuk);
-    if (savedSuratKeluar) suratKeluar = JSON.parse(savedSuratKeluar);
-    
-    if (suratMasuk.length === 0 && suratKeluar.length === 0) {
-        loadSampleData();
+    const closeBtn = document.querySelector('.close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeEditModal);
+    }
+
+    const modal = document.getElementById('edit-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
     }
 }
 
 function loadSampleData() {
-    suratMasuk = [
+    suratMasukData = [
         {
-            id: 'SM001',
-            noRujukan: 'SM/2024/001',
-            tarikh: '2024-01-15',
+            id: 1,
+            noRujukan: 'SKRP/2024/001',
+            tarikhTerima: '2024-01-15',
             pengirim: 'Jabatan Pendidikan Negeri',
-            subjek: 'Pelan Pembangunan Sekolah 2024',
-            status: 'baru',
-            tindakanSiapa: 'guru-besar'
-        }
-    ];
-    
-    suratKeluar = [
+            subjek: 'Permohonan Bantuan Peralatan Komputer',
+            status: 'Baru',
+            tindakanSiapa: 'En. Ahmad',
+            muatNaikSurat: 'surat_001.pdf'
+        },
         {
-            id: 'SK001',
-            noRujukan: 'SK/2024/001',
-            tarikh: '2024-01-10',
-            penerima: 'Jabatan Pendidikan Negeri',
-            subjek: 'Laporan Aktiviti Sekolah Bulan Januari',
-            status: 'selesai',
-            tindakanSiapa: 'pembantu-tadbir'
+            id: 2,
+            noRujukan: 'SKRP/2024/002',
+            tarikhTerima: '2024-01-16',
+            pengirim: 'Majlis Daerah',
+            subjek: 'Pemberitahuan Mesyuarat Bulanan',
+            status: 'Dalam Proses',
+            tindakanSiapa: 'Pn. Siti',
+            muatNaikSurat: 'surat_002.pdf'
         }
     ];
-    
-    saveData();
+
+    suratKeluarData = [
+        {
+            id: 1,
+            noRujukan: 'SKRP/OUT/2024/001',
+            tarikhTerima: '2024-01-17',
+            pengirim: 'SKRPget',
+            subjek: 'Jawapan Permohonan Bantuan',
+            status: 'Selesai',
+            tindakanSiapa: 'En. Ahmad',
+            muatNaikSurat: 'surat_keluar_001.pdf'
+        }
+    ];
+
+    renderSuratMasukTable();
+    renderSuratKeluarTable();
 }
 
-function saveData() {
-    localStorage.setItem('suratMasuk', JSON.stringify(suratMasuk));
-    localStorage.setItem('suratKeluar', JSON.stringify(suratKeluar));
-    
-    if (localStorage.getItem('autoSyncToSheets') === 'true') {
-        setTimeout(() => syncToGoogleSheets(), 1000);
+function renderSuratMasukTable() {
+    const tbody = document.getElementById('surat-masuk-tbody');
+    if (!tbody) return;
+
+    if (suratMasukData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h3>Tiada Surat Masuk</h3>
+                    <p>Belum ada surat masuk yang direkodkan</p>
+                </td>
+            </tr>
+        `;
+        return;
     }
-}
 
-// Table Rendering
-function renderTables() {
-    renderSuratMasuk();
-    renderSuratKeluar();
-}
-
-function renderSuratMasuk() {
-    const tbody = document.getElementById('tbodySuratMasuk');
-    tbody.innerHTML = '';
-    
-    suratMasuk.forEach(surat => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${surat.noRujukan}</td>
-            <td>${formatDate(surat.tarikh)}</td>
+    tbody.innerHTML = suratMasukData.map(surat => `
+        <tr>
+            <td><strong>${surat.noRujukan}</strong></td>
+            <td>${formatDate(surat.tarikhTerima)}</td>
             <td>${surat.pengirim}</td>
             <td>${surat.subjek}</td>
-            <td><span class="status-badge status-${surat.status}">${getStatusText(surat.status)}</span></td>
-            <td><span class="role-badge role-${surat.tindakanSiapa}">${getRoleText(surat.tindakanSiapa)}</span></td>
+            <td><span class="status-badge status-${getStatusClass(surat.status)}">${surat.status}</span></td>
+            <td>${surat.tindakanSiapa}</td>
             <td>
-                <div class="upload-section">
-                    <input type="file" id="upload-${surat.id}" class="file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display: none;">
-                    <button class="btn btn-upload" onclick="document.getElementById('upload-${surat.id}').click()">
-                        <i class="fas fa-upload"></i> Muat Naik
-                    </button>
-                    ${surat.suratFile ? `<div class="file-info"><i class="fas fa-file"></i> ${surat.suratFile}</div>` : ''}
-                </div>
+                ${surat.muatNaikSurat ? 
+                    `<a href="#" onclick="downloadFile('${surat.muatNaikSurat}')" class="btn-secondary">
+                        <i class="fas fa-download"></i> ${surat.muatNaikSurat}
+                    </a>` : 
+                    '<span class="text-muted">Tiada fail</span>'
+                }
             </td>
             <td>
-                <div class="action-buttons">
-                    <button class="btn btn-warning" onclick="editSurat('masuk', '${surat.id}')">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteSurat('masuk', '${surat.id}')">
-                        <i class="fas fa-trash"></i> Padam
-                    </button>
-                </div>
+                <button class="btn-edit" onclick="editSurat('masuk', ${surat.id})">
+                    <i class="fas fa-edit"></i> Kemaskini
+                </button>
+                <button class="btn-delete" onclick="deleteSurat('masuk', ${surat.id})">
+                    <i class="fas fa-trash"></i> Padam
+                </button>
             </td>
-        `;
-        tbody.appendChild(row);
-        
-        const fileInput = document.getElementById(`upload-${surat.id}`);
-        fileInput.addEventListener('change', (e) => {
-            handleSuratFileUpload(e, surat.id, 'masuk');
-        });
-    });
+        </tr>
+    `).join('');
 }
 
-function renderSuratKeluar() {
-    const tbody = document.getElementById('tbodySuratKeluar');
-    tbody.innerHTML = '';
-    
-    suratKeluar.forEach(surat => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${surat.noRujukan}</td>
-            <td>${formatDate(surat.tarikh)}</td>
-            <td>${surat.penerima}</td>
+function renderSuratKeluarTable() {
+    const tbody = document.getElementById('surat-keluar-tbody');
+    if (!tbody) return;
+
+    if (suratKeluarData.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="empty-state">
+                    <i class="fas fa-paper-plane"></i>
+                    <h3>Tiada Surat Keluar</h3>
+                    <p>Belum ada surat keluar yang direkodkan</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = suratKeluarData.map(surat => `
+        <tr>
+            <td><strong>${surat.noRujukan}</strong></td>
+            <td>${formatDate(surat.tarikhTerima)}</td>
+            <td>${surat.pengirim}</td>
             <td>${surat.subjek}</td>
-            <td><span class="status-badge status-${surat.status}">${getStatusText(surat.status)}</span></td>
-            <td><span class="role-badge role-${surat.tindakanSiapa}">${getRoleText(surat.tindakanSiapa)}</span></td>
+            <td><span class="status-badge status-${getStatusClass(surat.status)}">${surat.status}</span></td>
+            <td>${surat.tindakanSiapa}</td>
             <td>
-                <div class="upload-section">
-                    <input type="file" id="upload-${surat.id}" class="file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display: none;">
-                    <button class="btn btn-upload" onclick="document.getElementById('upload-${surat.id}').click()">
-                        <i class="fas fa-upload"></i> Muat Naik
-                    </button>
-                    ${surat.suratFile ? `<div class="file-info"><i class="fas fa-file"></i> ${surat.suratFile}</div>` : ''}
-                </div>
+                ${surat.muatNaikSurat ? 
+                    `<a href="#" onclick="downloadFile('${surat.muatNaikSurat}')" class="btn-secondary">
+                        <i class="fas fa-download"></i> ${surat.muatNaikSurat}
+                    </a>` : 
+                    '<span class="text-muted">Tiada fail</span>'
+                }
             </td>
             <td>
-                <div class="action-buttons">
-                    <button class="btn btn-warning" onclick="editSurat('keluar', '${surat.id}')">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>
-                    <button class="btn btn-danger" onclick="deleteSurat('keluar', '${surat.id}')">
-                        <i class="fas fa-trash"></i> Padam
-                    </button>
-                </div>
+                <button class="btn-edit" onclick="editSurat('keluar', ${surat.id})">
+                    <i class="fas fa-edit"></i> Kemaskini
+                </button>
+                <button class="btn-delete" onclick="deleteSurat('keluar', ${surat.id})">
+                    <i class="fas fa-trash"></i> Padam
+                </button>
             </td>
-        `;
-        tbody.appendChild(row);
-        
-        const fileInput = document.getElementById(`upload-${surat.id}`);
-        fileInput.addEventListener('change', (e) => {
-            handleSuratFileUpload(e, surat.id, 'keluar');
-        });
-    });
+        </tr>
+    `).join('');
 }
 
-// Search and Filter
-function filterSuratMasuk() {
-    const searchTerm = document.getElementById('searchMasuk').value.toLowerCase();
-    const tbody = document.getElementById('tbodySuratMasuk');
-    const rows = tbody.querySelectorAll('tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-}
-
-function filterSuratKeluar() {
-    const searchTerm = document.getElementById('searchKeluar').value.toLowerCase();
-    const tbody = document.getElementById('tbodySuratKeluar');
-    const rows = tbody.querySelectorAll('tr');
-    
-    rows.forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
-}
-
-// Form Handling
-function handleAddSurat(e) {
+function handleFormSubmit(e) {
     e.preventDefault();
     
-    if (currentRole === 'guru-besar' || currentRole === 'gpkp' || currentRole === 'gpkhem' || currentRole === 'gpkko') {
-        showNotification(`${getRoleText(currentRole)} tidak boleh menambah surat baru`, 'error');
-        return;
-    }
-    
-    const jenisSurat = document.getElementById('jenisSurat').value;
-    
-    if (!jenisSurat) {
-        showNotification('Sila pilih jenis surat', 'error');
-        return;
-    }
-    
+    const formData = new FormData(e.target);
     const suratData = {
-        id: generateId(jenisSurat),
-        noRujukan: document.getElementById('noRujukan').value,
-        tarikh: document.getElementById('tarikh').value,
-        subjek: document.getElementById('subjek').value,
-        keterangan: document.getElementById('keterangan').value,
-        status: document.getElementById('status').value,
-        tindakanSiapa: document.getElementById('tindakanSiapa').value
+        jenisSurat: formData.get('jenis-surat'),
+        noRujukan: formData.get('no-rujukan'),
+        tarikhTerima: formData.get('tarikh-terima'),
+        pengirim: formData.get('pengirim'),
+        subjek: formData.get('subjek'),
+        status: formData.get('status'),
+        tindakanSiapa: formData.get('tindakan-siapa'),
+        muatNaikSurat: formData.get('muat-naik')?.name || ''
     };
-    
-    if (jenisSurat === 'masuk') {
-        suratData.pengirim = document.getElementById('pengirimPenerima').value;
-        suratMasuk.push(suratData);
+
+    if (suratData.jenisSurat === 'masuk') {
+        addSuratMasuk(suratData);
     } else {
-        suratData.penerima = document.getElementById('pengirimPenerima').value;
-        suratKeluar.push(suratData);
+        addSuratKeluar(suratData);
     }
     
-    saveData();
-    renderTables();
     e.target.reset();
-    showNotification('Surat berjaya ditambah', 'success');
+    showMessage('Surat berjaya ditambah', 'success');
+    switchToPage(suratData.jenisSurat === 'masuk' ? 'surat-masuk' : 'surat-keluar');
 }
 
-function handleEditSurat(e) {
-    e.preventDefault();
-    
-    const suratData = {
-        noRujukan: document.getElementById('editNoRujukan').value,
-        tarikh: document.getElementById('editTarikh').value,
-        subjek: document.getElementById('editSubjek').value,
-        keterangan: document.getElementById('editKeterangan').value,
-        status: document.getElementById('editStatus').value,
-        tindakanSiapa: document.getElementById('editTindakanSiapa').value
+function addSuratMasuk(suratData) {
+    const newSurat = {
+        id: Date.now(),
+        ...suratData
     };
     
-    const suratList = currentEditingId.jenis === 'masuk' ? suratMasuk : suratKeluar;
-    const suratIndex = suratList.findIndex(s => s.id === currentEditingId.id);
+    suratMasukData.push(newSurat);
+    renderSuratMasukTable();
+}
+
+function addSuratKeluar(suratData) {
+    const newSurat = {
+        id: Date.now(),
+        ...suratData
+    };
     
-    if (suratIndex !== -1) {
-        Object.assign(suratList[suratIndex], suratData);
-        
-        if (currentEditingId.jenis === 'masuk') {
-            suratList[suratIndex].pengirim = document.getElementById('editPengirimPenerima').value;
-        } else {
-            suratList[suratIndex].penerima = document.getElementById('editPengirimPenerima').value;
-        }
-        
-        saveData();
-        renderTables();
-        closeModal();
-        showNotification('Surat berjaya dikemaskini', 'success');
-    }
+    suratKeluarData.push(newSurat);
+    renderSuratKeluarTable();
 }
 
-function handleDeleteSurat() {
-    if (confirm('Adakah anda pasti mahu memadamkan surat ini?')) {
-        const suratList = currentEditingId.jenis === 'masuk' ? suratMasuk : suratKeluar;
-        const suratIndex = suratList.findIndex(s => s.id === currentEditingId.id);
-        
-        if (suratIndex !== -1) {
-            suratList.splice(suratIndex, 1);
-            saveData();
-            renderTables();
-            closeModal();
-            showNotification('Surat berjaya dipadam', 'success');
-        }
-    }
-}
-
-// Edit and Delete Functions
 function editSurat(jenis, id) {
-    const suratList = jenis === 'masuk' ? suratMasuk : suratKeluar;
-    const surat = suratList.find(s => s.id === id);
+    const data = jenis === 'masuk' ? suratMasukData : suratKeluarData;
+    const surat = data.find(s => s.id === id);
     
-    if (surat) {
-        currentEditingId = { jenis, id };
-        
-        document.getElementById('editNoRujukan').value = surat.noRujukan;
-        document.getElementById('editTarikh').value = surat.tarikh;
-        document.getElementById('editSubjek').value = surat.subjek;
-        document.getElementById('editKeterangan').value = surat.keterangan || '';
-        document.getElementById('editStatus').value = surat.status;
-        document.getElementById('editTindakanSiapa').value = surat.tindakanSiapa;
-        
-        if (jenis === 'masuk') {
-            document.getElementById('editPengirimPenerima').value = surat.pengirim;
-        } else {
-            document.getElementById('editPengirimPenerima').value = surat.penerima;
-        }
-        
-        document.getElementById('modalTitle').textContent = `Edit Surat ${jenis === 'masuk' ? 'Masuk' : 'Keluar'}`;
-        document.getElementById('modal').style.display = 'block';
+    if (!surat) {
+        showMessage('Surat tidak dijumpai', 'error');
+        return;
+    }
+
+    document.getElementById('edit-id').value = surat.id;
+    document.getElementById('edit-jenis').value = jenis;
+    document.getElementById('edit-no-rujukan').value = surat.noRujukan;
+    document.getElementById('edit-tarikh-terima').value = surat.tarikhTerima;
+    document.getElementById('edit-pengirim').value = surat.pengirim;
+    document.getElementById('edit-subjek').value = surat.subjek;
+    document.getElementById('edit-status').value = surat.status;
+    document.getElementById('edit-tindakan-siapa').value = surat.tindakanSiapa;
+
+    document.getElementById('edit-modal').style.display = 'block';
+}
+
+function handleEditSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const suratData = {
+        id: parseInt(formData.get('edit-id')),
+        jenis: formData.get('edit-jenis'),
+        noRujukan: formData.get('edit-no-rujukan'),
+        tarikhTerima: formData.get('edit-tarikh-terima'),
+        pengirim: formData.get('edit-pengirim'),
+        subjek: formData.get('edit-subjek'),
+        status: formData.get('edit-status'),
+        tindakanSiapa: formData.get('edit-tindakan-siapa'),
+        muatNaikSurat: formData.get('edit-muat-naik')?.name || ''
+    };
+
+    if (suratData.jenis === 'masuk') {
+        updateSuratMasuk(suratData);
+    } else {
+        updateSuratKeluar(suratData);
+    }
+    
+    closeEditModal();
+    showMessage('Surat berjaya dikemaskini', 'success');
+}
+
+function updateSuratMasuk(suratData) {
+    const index = suratMasukData.findIndex(s => s.id === suratData.id);
+    if (index !== -1) {
+        suratMasukData[index] = { ...suratMasukData[index], ...suratData };
+        renderSuratMasukTable();
+    }
+}
+
+function updateSuratKeluar(suratData) {
+    const index = suratKeluarData.findIndex(s => s.id === suratData.id);
+    if (index !== -1) {
+        suratKeluarData[index] = { ...suratKeluarData[index], ...suratData };
+        renderSuratKeluarTable();
     }
 }
 
 function deleteSurat(jenis, id) {
-    if (confirm('Adakah anda pasti mahu memadamkan surat ini?')) {
-        const suratList = jenis === 'masuk' ? suratMasuk : suratKeluar;
-        const suratIndex = suratList.findIndex(s => s.id === id);
-        
-        if (suratIndex !== -1) {
-            suratList.splice(suratIndex, 1);
-            saveData();
-            renderTables();
-            showNotification('Surat berjaya dipadam', 'success');
-        }
-    }
-}
-
-// Modal Management
-function closeModal() {
-    document.getElementById('modal').style.display = 'none';
-    currentEditingId = null;
-    document.getElementById('formEditSurat').reset();
-}
-
-// Google Sheets Integration
-function initializeGoogleSheets() {
-    gapi.load('client', () => {
-        gapi.client.init({
-            apiKey: GOOGLE_SHEETS_CONFIG.apiKey,
-            discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-        }).then(() => {
-            console.log('Google Sheets API initialized');
-        }).catch(error => {
-            console.error('Error initializing Google Sheets API:', error);
-        });
-    });
-}
-
-function syncToGoogleSheets() {
-    const button = document.getElementById('syncToSheets');
-    const originalText = button.innerHTML;
-    
-    button.innerHTML = '<span class="loading"></span> Menyegerakan...';
-    button.disabled = true;
-    
-    const data = prepareDataForSheets();
-    
-    if (typeof gapi === 'undefined' || !gapi.client) {
-        showNotification('Google Sheets API tidak tersedia. Sila periksa konfigurasi.', 'error');
-        button.innerHTML = originalText;
-        button.disabled = false;
+    if (!confirm('Adakah anda pasti mahu memadamkan surat ini?')) {
         return;
     }
-    
-    gapi.client.sheets.spreadsheets.values.clear({
-        spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-        range: 'A:Z'
-    }).then(() => {
-        return gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-            range: 'A1',
-            valueInputOption: 'RAW',
-            resource: { values: data }
-        });
-    }).then((response) => {
-        button.innerHTML = originalText;
-        button.disabled = false;
-        showNotification(`Data berjaya disegerakan ke Google Sheets! ${response.result.updatedCells} sel dikemas kini.`, 'success');
-    }).catch((error) => {
-        console.error('Error syncing to Google Sheets:', error);
-        button.innerHTML = originalText;
-        button.disabled = false;
-        showNotification('Ralat semasa menyegerakan data ke Google Sheets. Sila periksa konfigurasi API.', 'error');
-    });
-}
 
-function loadFromGoogleSheets() {
-    const button = document.getElementById('loadFromSheets');
-    if (button) {
-        const originalText = button.innerHTML;
-        button.innerHTML = '<span class="loading"></span> Memuat dari Google Sheets...';
-        button.disabled = true;
-        
-        if (typeof gapi === 'undefined' || !gapi.client) {
-            showNotification('Google Sheets API tidak tersedia. Sila periksa konfigurasi.', 'error');
-            button.innerHTML = originalText;
-            button.disabled = false;
-            return;
-        }
-        
-        gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: GOOGLE_SHEETS_CONFIG.spreadsheetId,
-            range: 'A:Z'
-        }).then((response) => {
-            const values = response.result.values;
-            if (values && values.length > 1) {
-                processSheetsData(values);
-                button.innerHTML = originalText;
-                button.disabled = false;
-                showNotification('Data berjaya dimuat dari Google Sheets!', 'success');
-            } else {
-                button.innerHTML = originalText;
-                button.disabled = false;
-                showNotification('Tiada data dalam Google Sheets', 'warning');
-            }
-        }).catch((error) => {
-            console.error('Error loading from Google Sheets:', error);
-            button.innerHTML = originalText;
-            button.disabled = false;
-            showNotification('Ralat semasa memuat data dari Google Sheets.', 'error');
-        });
-    }
-}
-
-function processSheetsData(values) {
-    const dataRows = values.slice(1);
-    
-    suratMasuk = [];
-    suratKeluar = [];
-    
-    dataRows.forEach(row => {
-        if (row.length >= 7) {
-            const suratData = {
-                id: generateId(row[0] === 'Masuk' ? 'masuk' : 'keluar'),
-                noRujukan: row[1],
-                tarikh: row[2],
-                subjek: row[4],
-                status: getStatusFromText(row[5]),
-                tindakanSiapa: getRoleFromText(row[6]),
-                suratFile: row[7] !== '-' ? row[7] : null,
-                fileSize: row[8] !== '-' ? row[8] : null,
-                uploadDate: row[9] !== '-' ? new Date(row[9]).toISOString() : null
-            };
-            
-            if (row[0] === 'Masuk') {
-                suratData.pengirim = row[3];
-                suratMasuk.push(suratData);
-            } else {
-                suratData.penerima = row[3];
-                suratKeluar.push(suratData);
-            }
-        }
-    });
-    
-    saveData();
-    renderTables();
-}
-
-function prepareDataForSheets() {
-    const headers = ['Jenis', 'No. Rujukan', 'Tarikh', 'Pengirim/Penerima', 'Subjek', 'Status', 'Tindakan Siapa', 'Fail Surat', 'Saiz Fail', 'Tarikh Muat Naik'];
-    const data = [headers];
-    
-    suratMasuk.forEach(surat => {
-        data.push([
-            'Masuk',
-            surat.noRujukan,
-            surat.tarikh,
-            surat.pengirim,
-            surat.subjek,
-            getStatusText(surat.status),
-            getRoleText(surat.tindakanSiapa),
-            surat.suratFile || '-',
-            surat.fileSize || '-',
-            surat.uploadDate ? formatDate(surat.uploadDate) : '-'
-        ]);
-    });
-    
-    suratKeluar.forEach(surat => {
-        data.push([
-            'Keluar',
-            surat.noRujukan,
-            surat.tarikh,
-            surat.penerima,
-            surat.subjek,
-            getStatusText(surat.status),
-            getRoleText(surat.tindakanSiapa),
-            surat.suratFile || '-',
-            surat.fileSize || '-',
-            surat.uploadDate ? formatDate(surat.uploadDate) : '-'
-        ]);
-    });
-    
-    return data;
-}
-
-function openGoogleSheets() {
-    const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEETS_CONFIG.spreadsheetId}`;
-    window.open(url, '_blank');
-}
-
-function toggleAutoSync() {
-    const autoSyncToggle = document.getElementById('autoSyncToggle');
-    const isEnabled = autoSyncToggle.checked;
-    
-    localStorage.setItem('autoSyncToSheets', isEnabled.toString());
-    
-    if (isEnabled) {
-        showNotification('Auto-sync ke Google Sheets diaktifkan', 'success');
+    if (jenis === 'masuk') {
+        deleteSuratMasuk(id);
     } else {
-        showNotification('Auto-sync ke Google Sheets dimatikan', 'warning');
+        deleteSuratKeluar(id);
     }
+    
+    showMessage('Surat berjaya dipadamkan', 'success');
 }
 
-// Handle file upload for individual surat
-function handleSuratFileUpload(e, suratId, jenis) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    if (!validateFile(file)) {
-        return;
-    }
-    
-    const suratArray = jenis === 'masuk' ? suratMasuk : suratKeluar;
-    const surat = suratArray.find(s => s.id === suratId);
-    
-    if (surat) {
-        surat.suratFile = file.name;
-        surat.fileSize = formatFileSize(file.size);
-        surat.uploadDate = new Date().toISOString();
-        
-        saveData();
-        renderTables();
-        
-        showNotification(`Fail "${file.name}" berjaya dimuat naik untuk surat ${surat.noRujukan}`, 'success');
-    }
+function deleteSuratMasuk(id) {
+    suratMasukData = suratMasukData.filter(s => s.id !== id);
+    renderSuratMasukTable();
 }
 
-// File validation
-function validateFile(file) {
-    const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'image/jpeg',
-        'image/jpg',
-        'image/png'
-    ];
-    
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    
-    if (!allowedTypes.includes(file.type)) {
-        showNotification(`Jenis fail "${file.name}" tidak diterima. Sila pilih fail PDF, DOC, DOCX, JPG, atau PNG.`, 'error');
-        return false;
-    }
-    
-    if (file.size > maxSize) {
-        showNotification(`Saiz fail "${file.name}" terlalu besar. Saiz maksimum ialah 10MB.`, 'error');
-        return false;
-    }
-    
-    return true;
+function deleteSuratKeluar(id) {
+    suratKeluarData = suratKeluarData.filter(s => s.id !== id);
+    renderSuratKeluarTable();
 }
 
-// Utility Functions
-function generateId(jenis) {
-    const prefix = jenis === 'masuk' ? 'SM' : 'SK';
-    const existingIds = jenis === 'masuk' 
-        ? suratMasuk.map(s => s.id) 
-        : suratKeluar.map(s => s.id);
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    document.getElementById('edit-form').reset();
+}
+
+function showAddForm(jenis) {
+    document.getElementById('jenis-surat').value = jenis;
+    switchToPage('tambah-surat');
+}
+
+function switchToPage(pageId) {
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const pages = document.querySelectorAll('.page');
     
-    let counter = 1;
-    let newId = `${prefix}${counter.toString().padStart(3, '0')}`;
+    navButtons.forEach(btn => btn.classList.remove('active'));
+    pages.forEach(page => page.classList.remove('active'));
     
-    while (existingIds.includes(newId)) {
-        counter++;
-        newId = `${prefix}${counter.toString().padStart(3, '0')}`;
-    }
+    const targetButton = document.querySelector(`[data-page="${pageId}"]`);
+    const targetPage = document.getElementById(pageId);
     
-    return newId;
+    if (targetButton) targetButton.classList.add('active');
+    if (targetPage) targetPage.classList.add('active');
+}
+
+function downloadFile(filename) {
+    alert(`Muat turun fail: ${filename}\n\nNota: Fungsi ini memerlukan implementasi backend untuk memuat turun fail sebenar.`);
 }
 
 function formatDate(dateString) {
+    if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('ms-MY', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    return date.toLocaleDateString('ms-MY');
 }
 
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+function getStatusClass(status) {
+    switch (status) {
+        case 'Baru': return 'baru';
+        case 'Dalam Proses': return 'proses';
+        case 'Selesai': return 'selesai';
+        case 'Ditolak': return 'ditolak';
+        default: return 'baru';
+    }
 }
 
-function getStatusText(status) {
-    const statusMap = {
-        'baru': 'Baru',
-        'dalam_proses': 'Dalam Proses',
-        'selesai': 'Selesai',
-        'ditolak': 'Ditolak'
-    };
-    return statusMap[status] || status;
-}
-
-function getStatusFromText(text) {
-    const statusMap = {
-        'Baru': 'baru',
-        'Dalam Proses': 'dalam_proses',
-        'Selesai': 'selesai',
-        'Ditolak': 'ditolak'
-    };
-    return statusMap[text] || 'baru';
-}
-
-function getRoleFromText(text) {
-    const roleMap = {
-        'Guru Besar': 'guru-besar',
-        'GPKP': 'gpkp',
-        'GPKHEM': 'gpkhem',
-        'GPKKO': 'gpkko',
-        'Pembantu Tadbir': 'pembantu-tadbir',
-        'Pembantu Operasi': 'pembantu-operasi'
-    };
-    return roleMap[text] || 'pembantu-tadbir';
-}
-
-function setCurrentDate() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('tarikh').value = today;
-}
-
-// Notification System
-function showNotification(message, type = 'success') {
-    const notification = document.getElementById('notification');
-    const notificationMessage = document.getElementById('notificationMessage');
+function showMessage(message, type = 'info') {
+    const existingMessages = document.querySelectorAll('.message');
+    existingMessages.forEach(msg => msg.remove());
     
-    notificationMessage.textContent = message;
-    notification.className = `notification ${type}`;
-    notification.style.display = 'flex';
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    messageDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+        <span>${message}</span>
+    `;
     
-    setTimeout(() => {
-        hideNotification();
-    }, 5000);
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+        mainContent.insertBefore(messageDiv, mainContent.firstChild);
+        
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 5000);
+    }
 }
 
-function hideNotification() {
-    document.getElementById('notification').style.display = 'none';
-}
-
-// Initialize the application
-updateUserInterface(); 
+// Export functions for global access
+window.showAddForm = showAddForm;
+window.editSurat = editSurat;
+window.deleteSurat = deleteSurat;
+window.downloadFile = downloadFile;
+window.closeEditModal = closeEditModal; 

@@ -1,128 +1,207 @@
-# eDaftar Surat SKRP GET
+# eDaftar Surat SKRPget
 
-Sistem pengurusan surat digital untuk SKRP GET dengan integrasi Google Sheets.
+Aplikasi web untuk menguruskan daftar surat masuk dan keluar menggunakan HTML, CSS, dan JavaScript dengan integrasi Google Sheets sebagai database.
 
-## Ciri-ciri Utama
+## Ciri-ciri
 
-### 📋 Pengurusan Surat
-- **Surat Masuk**: Rekod dan urus surat yang diterima
-- **Surat Keluar**: Rekod dan urus surat yang dihantar
-- **Muat Naik Fail**: Lampirkan fail surat (PDF, DOC, DOCX, JPG, PNG)
-- **Status Tracking**: Baru, Dalam Proses, Selesai, Ditolak
-- **Peranan Pengguna**: Guru Besar, GPKP, GPKHEM, GPKKO, Pembantu Tadbir, Pembantu Operasi
+- 📥 **Surat Masuk**: Menguruskan surat yang diterima
+- 📤 **Surat Keluar**: Menguruskan surat yang dihantar
+- ➕ **Tambah Surat**: Antara muka untuk menambah surat baru
+- ✏️ **Kemaskini**: Fungsi untuk mengemaskini maklumat surat
+- 🗑️ **Padam**: Fungsi untuk memadamkan surat
+- 📁 **Muat Naik Fail**: Sokongan untuk fail PDF, DOC, dan imej
+- 📊 **Google Sheets Integration**: Penyimpanan data dalam Google Sheets
+- 📱 **Responsive Design**: Sesuai untuk desktop dan mobile
+- 🎨 **Tema Biru Laut**: Reka bentuk moden dengan warna biru laut
 
-### 🔄 Integrasi Google Sheets
-- **Auto-sync**: Segerakan data secara automatik ke Google Sheets
-- **Manual Sync**: Butang untuk menyegerakan data secara manual
-- **Load from Sheets**: Muat data dari Google Sheets
-- **Backup & Restore**: Simpan dan pulih data dari cloud
+## Maklumat Surat
 
-### 🎨 Antara Muka
-- **Responsive Design**: Berfungsi pada desktop dan mobile
-- **Modern UI**: Antara muka yang moden dan mudah digunakan
-- **Real-time Search**: Cari surat dengan pantas
-- **Notifications**: Makluman untuk tindakan pengguna
+Setiap surat mengandungi maklumat berikut:
+- **No. Rujukan**: Nombor rujukan surat
+- **Tarikh Terima**: Tarikh surat diterima
+- **Pengirim**: Sumber pengirim surat
+- **Subjek**: Subjek atau tajuk surat
+- **Status**: Status surat (Baru, Dalam Proses, Selesai, Ditolak)
+- **Tindakan Siapa**: Orang yang bertanggungjawab
+- **Muat Naik Surat**: Fail yang dilampirkan
+- **Tindakan**: Butang kemaskini dan padam
 
-## Persediaan Google Sheets
+## Struktur Fail
 
-### 1. Buat Google Cloud Project
-1. Buka [Google Cloud Console](https://console.cloud.google.com/)
-2. Buat projek baru atau pilih projek sedia ada
-3. Aktifkan Google Sheets API
+```
+DAFTAR/
+├── index.html          # Fail HTML utama
+├── styles.css          # Fail CSS untuk styling
+├── script.js           # Fail JavaScript untuk fungsi
+└── README.md           # Dokumentasi
+```
 
-### 2. Dapatkan API Key
-1. Pergi ke "Credentials" dalam Google Cloud Console
-2. Klik "Create Credentials" > "API Key"
-3. Salin API key yang dijana
+## Penggunaan
 
-### 3. Buat Google Spreadsheet
-1. Buka [Google Sheets](https://sheets.google.com/)
-2. Buat spreadsheet baru
-3. Salin Spreadsheet ID dari URL (selepas /d/ dan sebelum /edit)
+### 1. Buka Aplikasi
+Buka fail `index.html` dalam pelayar web.
 
-### 4. Konfigurasi Aplikasi
-1. Buka fail `script.js`
-2. Cari bahagian `GOOGLE_SHEETS_CONFIG`
-3. Ganti nilai berikut:
-   ```javascript
-   const GOOGLE_SHEETS_CONFIG = {
-       apiKey: 'YOUR_GOOGLE_SHEETS_API_KEY', // Ganti dengan API key anda
-       spreadsheetId: 'YOUR_SPREADSHEET_ID', // Ganti dengan Spreadsheet ID anda
-       range: 'A:Z'
-   };
+### 2. Navigasi
+- **Surat Masuk**: Lihat dan urus surat yang diterima
+- **Surat Keluar**: Lihat dan urus surat yang dihantar
+- **Tambah Surat**: Tambah surat baru
+
+### 3. Tambah Surat
+1. Klik "Tambah Surat" atau butang "Tambah Surat Masuk/Keluar"
+2. Isi semua maklumat yang diperlukan
+3. Pilih fail untuk dimuat naik (pilihan)
+4. Klik "Simpan"
+
+### 4. Kemaskini Surat
+1. Klik butang "Kemaskini" pada baris surat
+2. Ubah maklumat yang diperlukan
+3. Klik "Kemaskini"
+
+### 5. Padam Surat
+1. Klik butang "Padam" pada baris surat
+2. Sahkan pemadaman
+
+## Integrasi Google Sheets
+
+### Setup Google Sheets
+
+1. **Buat Google Sheets baru**
+   - Buka [Google Sheets](https://sheets.google.com)
+   - Cipta spreadsheet baru
+   - Namakan worksheet pertama sebagai "SuratMasuk"
+   - Tambah worksheet kedua dan namakan sebagai "SuratKeluar"
+
+2. **Setup Header**
+   Dalam kedua-dua worksheet, tambah header berikut pada baris pertama:
+   ```
+   No. Rujukan | Tarikh Terima | Pengirim | Subjek | Status | Tindakan Siapa | Muat Naik Surat | Timestamp
    ```
 
-## Struktur Data Google Sheets
+3. **Dapatkan Spreadsheet ID**
+   - Dari URL Google Sheets, salin ID (bahagian antara /d/ dan /edit)
+   - Contoh: `https://docs.google.com/spreadsheets/d/1ABC123.../edit`
+   - ID: `1ABC123...`
 
-Aplikasi akan menyimpan data dalam format berikut:
+4. **Dapatkan API Key**
+   - Buka [Google Cloud Console](https://console.cloud.google.com)
+   - Cipta projek baru atau pilih projek sedia ada
+   - Aktifkan Google Sheets API
+   - Cipta API Key
+   - Salin API Key
 
-| Kolum | Penerangan |
-|-------|------------|
-| Jenis | Masuk/Keluar |
-| No. Rujukan | Nombor rujukan surat |
-| Tarikh | Tarikh surat |
-| Pengirim/Penerima | Nama pengirim atau penerima |
-| Subjek | Subjek surat |
-| Status | Baru/Dalam Proses/Selesai/Ditolak |
-| Tindakan Siapa | Peranan yang bertanggungjawab |
-| Fail Surat | Nama fail yang dimuat naik |
-| Saiz Fail | Saiz fail dalam bytes |
-| Tarikh Muat Naik | Tarikh fail dimuat naik |
+5. **Konfigurasi Aplikasi**
+   - Buka fail `script.js`
+   - Ganti `YOUR_GOOGLE_SHEETS_ID_HERE` dengan Spreadsheet ID
+   - Ganti `YOUR_GOOGLE_SHEETS_API_KEY_HERE` dengan API Key
 
-## Cara Penggunaan
+### Contoh Konfigurasi
 
-### 1. Tambah Surat Baru
-1. Klik tab "Tambah Surat"
-2. Pilih jenis surat (Masuk/Keluar)
-3. Isi maklumat yang diperlukan
-4. Muat naik fail surat (pilihan)
-5. Klik "Simpan Surat"
+```javascript
+const GOOGLE_SHEETS_CONFIG = {
+    spreadsheetId: '1ABC123DEF456GHI789JKL',
+    apiKey: 'AIzaSyB1234567890abcdefghijklmnopqrstuvwxyz',
+    suratMasukSheet: 'SuratMasuk',
+    suratKeluarSheet: 'SuratKeluar'
+};
+```
 
-### 2. Muat Naik Fail Surat
-1. Dalam jadual Surat Masuk/Keluar
-2. Klik butang "Muat Naik" pada baris surat
-3. Pilih fail (PDF, DOC, DOCX, JPG, PNG)
-4. Fail akan disimpan dan dipaparkan
+## Ciri-ciri Teknikal
 
-### 3. Segerakan ke Google Sheets
-1. Klik tab "Muat Naik Surat"
-2. Aktifkan "Auto-sync ke Google Sheets" untuk sync automatik
-3. Atau klik "Segerakan ke Google Sheets" untuk sync manual
-4. Klik "Muat dari Google Sheets" untuk memuat data dari cloud
+### Frontend
+- **HTML5**: Struktur semantik dan moden
+- **CSS3**: Flexbox, Grid, Animasi, Responsive Design
+- **JavaScript ES6+**: Async/await, Arrow functions, Template literals
+- **Font Awesome**: Ikon yang cantik
+- **Google Fonts**: Font Inter untuk tipografi yang baik
 
-### 4. Tukar Peranan
-1. Klik butang "Tukar Peranan" di header
-2. Pilih peranan yang sesuai
-3. Antara muka akan berubah mengikut kebenaran peranan
+### Backend (Google Sheets)
+- **Google Sheets API v4**: REST API untuk operasi CRUD
+- **Real-time Sync**: Data disimpan secara automatik
+- **Multi-user**: Boleh diakses oleh pelbagai pengguna
 
-## Fail-fail Utama
+### Responsive Design
+- **Mobile First**: Direka untuk mobile terlebih dahulu
+- **Breakpoints**: 480px, 768px, 1400px
+- **Flexible Layout**: Grid dan Flexbox untuk layout yang fleksibel
 
-- `index.html` - Antara muka utama
-- `script.js` - Logik aplikasi dan integrasi Google Sheets
-- `styles.css` - Styling dan reka bentuk
-- `README.md` - Dokumentasi ini
+## Status Surat
 
-## Keperluan Teknikal
+- 🆕 **Baru**: Surat yang baru diterima
+- 🔄 **Dalam Proses**: Surat sedang diproses
+- ✅ **Selesai**: Surat telah selesai diproses
+- ❌ **Ditolak**: Surat ditolak atau tidak diluluskan
 
-- **Browser**: Chrome, Firefox, Safari, Edge (versi terkini)
-- **Internet**: Untuk integrasi Google Sheets
-- **Storage**: LocalStorage untuk data tempatan
-- **File Upload**: Sokongan untuk fail sehingga 10MB
+## Format Fail yang Disokong
+
+- **PDF**: `.pdf`
+- **Microsoft Word**: `.doc`, `.docx`
+- **Imej**: `.jpg`, `.jpeg`, `.png`
 
 ## Keselamatan
 
-- Data disimpan dalam localStorage browser
-- API key Google Sheets perlu dikonfigurasi dengan betul
-- Fail yang dimuat naik disimpan secara tempatan
-- Tiada data sensitif dihantar ke server pihak ketiga
+- **API Key Restriction**: Hadkan API Key kepada domain tertentu
+- **CORS**: Pastikan Google Sheets API membenarkan akses dari domain anda
+- **Input Validation**: Semua input divalidasi sebelum diproses
+
+## Troubleshooting
+
+### Masalah Biasa
+
+1. **Data tidak dimuatkan**
+   - Periksa konfigurasi Google Sheets
+   - Pastikan API Key betul
+   - Periksa console browser untuk error
+
+2. **Tidak boleh simpan data**
+   - Pastikan Google Sheets API diaktifkan
+   - Periksa permission spreadsheet
+   - Pastikan format data betul
+
+3. **Aplikasi tidak berfungsi**
+   - Periksa fail JavaScript untuk error
+   - Pastikan semua fail dimuatkan dengan betul
+   - Periksa console browser
+
+### Debug Mode
+
+Untuk debug, buka Developer Tools (F12) dan periksa:
+- **Console**: Untuk error JavaScript
+- **Network**: Untuk request API
+- **Application**: Untuk localStorage dan sessionStorage
+
+## Pembangunan Lanjutan
+
+### Ciri-ciri yang Boleh Ditambah
+
+- 🔍 **Carian dan Filter**: Cari surat berdasarkan kriteria
+- 📊 **Dashboard**: Statistik dan laporan
+- 📧 **Notifikasi**: Email notification
+- 🔐 **Authentication**: Login system
+- 📱 **PWA**: Progressive Web App
+- 🗂️ **Kategori**: Kategori surat
+- 📅 **Calendar View**: Paparan kalendar
+- 📈 **Analytics**: Analisis data
+
+### Teknologi Lanjutan
+
+- **Vue.js/React**: Framework JavaScript
+- **Node.js**: Backend server
+- **MongoDB**: Database alternatif
+- **Firebase**: Backend as a Service
+- **Docker**: Containerization
 
 ## Sokongan
 
-Untuk bantuan atau pertanyaan:
-1. Periksa konfigurasi Google Sheets API
-2. Pastikan browser menyokong JavaScript
-3. Periksa sambungan internet untuk sync ke Google Sheets
+Untuk bantuan dan sokongan:
+- Periksa dokumentasi ini
+- Lihat komen dalam kod
+- Periksa console browser untuk error
+- Rujuk Google Sheets API documentation
 
-## Versi
+## Lesen
 
-**v1.0.0** - Versi awal dengan ciri-ciri asas dan integrasi Google Sheets 
+Aplikasi ini adalah open source dan boleh digunakan untuk tujuan pendidikan dan komersial.
+
+---
+
+**Dibangunkan untuk SKRPget** 🏫 

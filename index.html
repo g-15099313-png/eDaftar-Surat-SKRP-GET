@@ -3,64 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eDaftar Surat SKRP GET</title>
+    <title>eDaftar Surat SKRPget</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Sheets API -->
-    <script src="https://script.google.com/macros/s/AKfycbzqUn4rEta6TEZN_fX1TCQvw82Cb_3a9WfZIC5GrU1j6t5lGkxjRSuaQMc5fM5uKHik/exec"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-envelope-open-text"></i>
-                    <h1>eDaftar Surat SKRP GET</h1>
-                </div>
-                <div class="user-info">
-                    <span id="currentUser">Guru Besar</span>
-                    <button id="switchRole" class="btn-switch">
-                        <i class="fas fa-exchange-alt"></i>
-                        Tukar Peranan
+                <h1><i class="fas fa-envelope"></i> eDaftar Surat SKRPget</h1>
+                <nav class="nav-menu">
+                    <button class="nav-btn active" data-page="surat-masuk">
+                        <i class="fas fa-inbox"></i> Surat Masuk
                     </button>
-                </div>
+                    <button class="nav-btn" data-page="surat-keluar">
+                        <i class="fas fa-paper-plane"></i> Surat Keluar
+                    </button>
+                    <button class="nav-btn" data-page="tambah-surat">
+                        <i class="fas fa-plus"></i> Tambah Surat
+                    </button>
+                </nav>
             </div>
         </header>
 
-        <!-- Navigation -->
-        <nav class="nav">
-            <button class="nav-btn active" data-tab="surat-masuk">
-                <i class="fas fa-inbox"></i>
-                Surat Masuk
-            </button>
-            <button class="nav-btn" data-tab="surat-keluar">
-                <i class="fas fa-paper-plane"></i>
-                Surat Keluar
-            </button>
-            <button class="nav-btn" data-tab="tambah-surat">
-                <i class="fas fa-plus"></i>
-                Tambah Surat
-            </button>
-            <button class="nav-btn" data-tab="muat-naik">
-                <i class="fas fa-upload"></i>
-                Muat Naik Surat
-            </button>
-        </nav>
-
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Surat Masuk Tab -->
-            <div id="surat-masuk" class="tab-content active">
-                <div class="tab-header">
+            <!-- Surat Masuk Page -->
+            <div id="surat-masuk" class="page active">
+                <div class="page-header">
                     <h2><i class="fas fa-inbox"></i> Surat Masuk</h2>
-                    <div class="search-box">
-                        <input type="text" id="searchMasuk" placeholder="Cari surat masuk...">
-                        <i class="fas fa-search"></i>
-                    </div>
+                    <button class="btn-primary" onclick="showAddForm('masuk')">
+                        <i class="fas fa-plus"></i> Tambah Surat Masuk
+                    </button>
                 </div>
                 <div class="table-container">
-                    <table id="tableSuratMasuk">
+                    <table id="surat-masuk-table" class="data-table">
                         <thead>
                             <tr>
                                 <th>No. Rujukan</th>
@@ -73,29 +52,28 @@
                                 <th>Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody id="tbodySuratMasuk">
-                            <!-- Data will be populated by JavaScript -->
+                        <tbody id="surat-masuk-tbody">
+                            <!-- Data akan dimuatkan melalui JavaScript -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Surat Keluar Tab -->
-            <div id="surat-keluar" class="tab-content">
-                <div class="tab-header">
+            <!-- Surat Keluar Page -->
+            <div id="surat-keluar" class="page">
+                <div class="page-header">
                     <h2><i class="fas fa-paper-plane"></i> Surat Keluar</h2>
-                    <div class="search-box">
-                        <input type="text" id="searchKeluar" placeholder="Cari surat keluar...">
-                        <i class="fas fa-search"></i>
-                    </div>
+                    <button class="btn-primary" onclick="showAddForm('keluar')">
+                        <i class="fas fa-plus"></i> Tambah Surat Keluar
+                    </button>
                 </div>
                 <div class="table-container">
-                    <table id="tableSuratKeluar">
+                    <table id="surat-keluar-table" class="data-table">
                         <thead>
                             <tr>
                                 <th>No. Rujukan</th>
-                                <th>Tarikh Hantar</th>
-                                <th>Penerima</th>
+                                <th>Tarikh Terima</th>
+                                <th>Pengirim</th>
                                 <th>Subjek</th>
                                 <th>Status</th>
                                 <th>Tindakan Siapa</th>
@@ -103,227 +81,126 @@
                                 <th>Tindakan</th>
                             </tr>
                         </thead>
-                        <tbody id="tbodySuratKeluar">
-                            <!-- Data will be populated by JavaScript -->
+                        <tbody id="surat-keluar-tbody">
+                            <!-- Data akan dimuatkan melalui JavaScript -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Tambah Surat Tab -->
-            <div id="tambah-surat" class="tab-content">
-                <div class="tab-header">
+            <!-- Tambah Surat Page -->
+            <div id="tambah-surat" class="page">
+                <div class="page-header">
                     <h2><i class="fas fa-plus"></i> Tambah Surat Baru</h2>
                 </div>
                 <div class="form-container">
-                    <form id="formTambahSurat">
+                    <form id="surat-form" class="surat-form">
                         <div class="form-group">
-                            <label for="jenisSurat">Jenis Surat:</label>
-                            <select id="jenisSurat" required>
-                                <option value="">Pilih jenis surat</option>
+                            <label for="jenis-surat">Jenis Surat:</label>
+                            <select id="jenis-surat" name="jenis-surat" required>
+                                <option value="">Pilih Jenis Surat</option>
                                 <option value="masuk">Surat Masuk</option>
                                 <option value="keluar">Surat Keluar</option>
                             </select>
                         </div>
-
                         <div class="form-group">
-                            <label for="noRujukan">No. Rujukan:</label>
-                            <input type="text" id="noRujukan" required>
+                            <label for="no-rujukan">No. Rujukan:</label>
+                            <input type="text" id="no-rujukan" name="no-rujukan" required>
                         </div>
-
                         <div class="form-group">
-                            <label for="tarikh">Tarikh:</label>
-                            <input type="date" id="tarikh" required>
+                            <label for="tarikh-terima">Tarikh Terima:</label>
+                            <input type="date" id="tarikh-terima" name="tarikh-terima" required>
                         </div>
-
                         <div class="form-group">
-                            <label for="pengirimPenerima">Pengirim/Penerima:</label>
-                            <input type="text" id="pengirimPenerima" required>
+                            <label for="pengirim">Pengirim:</label>
+                            <input type="text" id="pengirim" name="pengirim" required>
                         </div>
-
                         <div class="form-group">
                             <label for="subjek">Subjek:</label>
-                            <textarea id="subjek" rows="3" required></textarea>
+                            <textarea id="subjek" name="subjek" rows="3" required></textarea>
                         </div>
-
-                        <div class="form-group">
-                            <label for="keterangan">Keterangan:</label>
-                            <textarea id="keterangan" rows="3"></textarea>
-                        </div>
-
                         <div class="form-group">
                             <label for="status">Status:</label>
-                            <select id="status" required>
-                                <option value="">Pilih status</option>
-                                <option value="baru">Baru</option>
-                                <option value="dalam_proses">Dalam Proses</option>
-                                <option value="selesai">Selesai</option>
-                                <option value="ditolak">Ditolak</option>
+                            <select id="status" name="status" required>
+                                <option value="">Pilih Status</option>
+                                <option value="Baru">Baru</option>
+                                <option value="Dalam Proses">Dalam Proses</option>
+                                <option value="Selesai">Selesai</option>
+                                <option value="Ditolak">Ditolak</option>
                             </select>
                         </div>
-
                         <div class="form-group">
-                            <label for="tindakanSiapa">Tindakan Siapa:</label>
-                            <select id="tindakanSiapa" required>
-                                <option value="">Pilih tindakan</option>
-                                <option value="guru-besar">Guru Besar</option>
-                                <option value="gpkp">GPKP</option>
-                                <option value="gpkhem">GPKHEM</option>
-                                <option value="gpkko">GPKKO</option>
-                                <option value="pembantu-tadbir">Pembantu Tadbir</option>
-                                <option value="pembantu-operasi">Pembantu Operasi</option>
-                            </select>
+                            <label for="tindakan-siapa">Tindakan Siapa:</label>
+                            <input type="text" id="tindakan-siapa" name="tindakan-siapa" required>
                         </div>
-
                         <div class="form-group">
-                            <label for="suratFile">Muat Naik Surat:</label>
-                            <input type="file" id="suratFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                            <small class="form-help">Format: PDF, DOC, DOCX, JPG, JPEG, PNG (Maksimum 10MB)</small>
+                            <label for="muat-naik">Muat Naik Surat:</label>
+                            <input type="file" id="muat-naik" name="muat-naik" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                         </div>
-
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save"></i>
-                                Simpan Surat
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i> Simpan
                             </button>
-                            <button type="reset" class="btn btn-secondary">
-                                <i class="fas fa-undo"></i>
-                                Reset
+                            <button type="reset" class="btn-secondary">
+                                <i class="fas fa-undo"></i> Reset
                             </button>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <!-- Muat Naik Surat Tab -->
-            <div id="muat-naik" class="tab-content">
-                <div class="tab-header">
-                    <h2><i class="fas fa-upload"></i> Muat Naik Surat</h2>
-                </div>
-                <div class="upload-container">
-                    <div class="upload-section">
-                        <h3>Muat Naik Dokumen Surat</h3>
-                        <div class="upload-area" id="uploadArea">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>Seret fail ke sini atau klik untuk memilih fail</p>
-                            <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple>
-                        </div>
-                        <div class="upload-info">
-                            <p><strong>Format yang diterima:</strong> PDF, DOC, DOCX, JPG, JPEG, PNG</p>
-                            <p><strong>Saiz maksimum:</strong> 10MB setiap fail</p>
-                        </div>
-                    </div>
-                    
-                    <div class="google-sheets-section">
-                        <h3>Penyimpanan ke Google Sheets</h3>
-                        <div class="sheets-info">
-                            <p>Data surat akan disimpan secara automatik ke Google Sheets</p>
-                            <div class="sheets-config-info">
-                                <p><strong>Nota:</strong> Pastikan anda telah mengkonfigurasi Google Sheets API dalam fail script.js</p>
-                                <p><strong>API Key:</strong> Ganti 'AIzaSyBFkqC_FD52gbJryLnazM9rUZDh68yeddk' dengan API key anda</p>
-                                <p><strong>Spreadsheet ID:</strong> Ganti '15nu60sG09vyZgCPGie8PosMszyNPTeVKMRIkr_4ooOM' dengan ID spreadsheet anda</p>
-                            </div>
-                            <div class="auto-sync-control">
-                                <label class="auto-sync-toggle">
-                                    <input type="checkbox" id="autoSyncToggle">
-                                    <span class="toggle-slider"></span>
-                                    Auto-sync ke Google Sheets
-                                </label>
-                            </div>
-                            <div class="sheets-buttons">
-                                <button id="syncToSheets" class="btn btn-primary">
-                                    <i class="fas fa-sync"></i>
-                                    Segerakan ke Google Sheets
-                                </button>
-                                <button id="loadFromSheets" class="btn btn-success">
-                                    <i class="fas fa-download"></i>
-                                    Muat dari Google Sheets
-                                </button>
-                                <button id="openSheets" class="btn btn-secondary">
-                                    <i class="fas fa-external-link-alt"></i>
-                                    Buka Google Sheets
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="uploaded-files">
-                        <h3>Fail yang Dimuat Naik</h3>
-                        <div id="uploadedFilesList">
-                            <!-- Uploaded files will be listed here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
         </main>
     </div>
 
-    <!-- Modal for Edit/Delete -->
-    <div id="modal" class="modal">
+    <!-- Modal untuk Edit -->
+    <div id="edit-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modalTitle">Edit Surat</h3>
+                <h3>Kemaskini Surat</h3>
                 <span class="close">&times;</span>
             </div>
             <div class="modal-body">
-                <form id="formEditSurat">
+                <form id="edit-form" class="surat-form">
+                    <input type="hidden" id="edit-id" name="edit-id">
+                    <input type="hidden" id="edit-jenis" name="edit-jenis">
                     <div class="form-group">
-                        <label for="editNoRujukan">No. Rujukan:</label>
-                        <input type="text" id="editNoRujukan" required>
+                        <label for="edit-no-rujukan">No. Rujukan:</label>
+                        <input type="text" id="edit-no-rujukan" name="edit-no-rujukan" required>
                     </div>
                     <div class="form-group">
-                        <label for="editTarikh">Tarikh:</label>
-                        <input type="date" id="editTarikh" required>
+                        <label for="edit-tarikh-terima">Tarikh Terima:</label>
+                        <input type="date" id="edit-tarikh-terima" name="edit-tarikh-terima" required>
                     </div>
                     <div class="form-group">
-                        <label for="editPengirimPenerima">Pengirim/Penerima:</label>
-                        <input type="text" id="editPengirimPenerima" required>
+                        <label for="edit-pengirim">Pengirim:</label>
+                        <input type="text" id="edit-pengirim" name="edit-pengirim" required>
                     </div>
                     <div class="form-group">
-                        <label for="editSubjek">Subjek:</label>
-                        <textarea id="editSubjek" rows="3" required></textarea>
+                        <label for="edit-subjek">Subjek:</label>
+                        <textarea id="edit-subjek" name="edit-subjek" rows="3" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="editKeterangan">Keterangan:</label>
-                        <textarea id="editKeterangan" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="editStatus">Status:</label>
-                        <select id="editStatus" required>
-                            <option value="baru">Baru</option>
-                            <option value="dalam_proses">Dalam Proses</option>
-                            <option value="selesai">Selesai</option>
-                            <option value="ditolak">Ditolak</option>
+                        <label for="edit-status">Status:</label>
+                        <select id="edit-status" name="edit-status" required>
+                            <option value="Baru">Baru</option>
+                            <option value="Dalam Proses">Dalam Proses</option>
+                            <option value="Selesai">Selesai</option>
+                            <option value="Ditolak">Ditolak</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="editTindakanSiapa">Tindakan Siapa:</label>
-                        <select id="editTindakanSiapa" required>
-                            <option value="guru-besar">Guru Besar</option>
-                            <option value="gpkp">GPKP</option>
-                            <option value="gpkhem">GPKHEM</option>
-                            <option value="gpkko">GPKKO</option>
-                            <option value="pembantu-tadbir">Pembantu Tadbir</option>
-                            <option value="pembantu-operasi">Pembantu Operasi</option>
-                        </select>
+                        <label for="edit-tindakan-siapa">Tindakan Siapa:</label>
+                        <input type="text" id="edit-tindakan-siapa" name="edit-tindakan-siapa" required>
                     </div>
                     <div class="form-group">
-                        <label for="editSuratFile">Muat Naik Surat:</label>
-                        <input type="file" id="editSuratFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                        <small class="form-help">Format: PDF, DOC, DOCX, JPG, JPEG, PNG (Maksimum 10MB)</small>
+                        <label for="edit-muat-naik">Muat Naik Surat:</label>
+                        <input type="file" id="edit-muat-naik" name="edit-muat-naik" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                     </div>
-                    <div class="modal-actions">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i>
-                            Simpan Perubahan
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Kemaskini
                         </button>
-                        <button type="button" class="btn btn-danger" id="btnDelete">
-                            <i class="fas fa-trash"></i>
-                            Padam
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="btnCancel">
-                            <i class="fas fa-times"></i>
-                            Batal
+                        <button type="button" class="btn-secondary" onclick="closeEditModal()">
+                            <i class="fas fa-times"></i> Batal
                         </button>
                     </div>
                 </form>
@@ -331,12 +208,13 @@
         </div>
     </div>
 
-    <!-- Notification -->
-    <div id="notification" class="notification">
-        <span id="notificationMessage"></span>
-        <button class="notification-close">&times;</button>
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Memuatkan data...</p>
     </div>
 
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 </html> 
